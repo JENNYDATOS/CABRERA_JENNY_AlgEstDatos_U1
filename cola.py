@@ -1,78 +1,110 @@
-"""Cola enlazada de turnos con referencias head y tail (FIFO)."""
+
+# cola.py
+# Cola enlazada de turnos: FIFO.
+# Encolar y desencolar: O(1).
 
 class NodoCola:
-    def __init__(self, cliente):
-        self.cliente = cliente
+    def __init__(self, turno):
+        self.turno = turno
         self.siguiente = None
 
 
-class Cola:
+class ColaTurnos:
     def __init__(self):
-        self.head = None
-        self.tail = None
+        self.cabeza = None
+        self.cola = None
         self.tamano = 0
 
     def esta_vacia(self):
-        return self.head is None
+        return self.cabeza is None
 
-    def enqueue(self, cliente):
-        """Inserta al final. Complejidad: O(1)."""
-        nuevo = NodoCola(cliente)
+    def encolar(self, turno):
+        nuevo = NodoCola(turno)
+
         if self.esta_vacia():
-            self.head = self.tail = nuevo
+            self.cabeza = nuevo
+            self.cola = nuevo
         else:
-            self.tail.siguiente = nuevo
-            self.tail = nuevo
+            self.cola.siguiente = nuevo
+            self.cola = nuevo
+
         self.tamano += 1
 
-    def dequeue(self):
-        """Retira el primero. Complejidad: O(1)."""
+    def desencolar(self):
         if self.esta_vacia():
             return None
-        cliente = self.head.cliente
-        self.head = self.head.siguiente
-        if self.head is None:
-            self.tail = None
-        self.tamano -= 1
-        return cliente
 
-    def enqueue_front(self, cliente):
-        """Restaura al frente al deshacer una atención. Complejidad: O(1)."""
-        nuevo = NodoCola(cliente)
+        turno = self.cabeza.turno
+        self.cabeza = self.cabeza.siguiente
+
+        if self.cabeza is None:
+            self.cola = None
+
+        self.tamano -= 1
+        return turno
+
+    def encolar_frente(self, turno):
+        nuevo = NodoCola(turno)
+
         if self.esta_vacia():
-            self.head = self.tail = nuevo
+            self.cabeza = self.cola = nuevo
         else:
-            nuevo.siguiente = self.head
-            self.head = nuevo
+            nuevo.siguiente = self.cabeza
+            self.cabeza = nuevo
+
         self.tamano += 1
 
-    def remove_by_dni(self, dni):
-        """Elimina un cliente pendiente por DNI. Complejidad: O(n)."""
-        anterior = None
-        actual = self.head
+    def obtener_turnos(self):
+        turnos = []
+        actual = self.cabeza
+
         while actual is not None:
-            if actual.cliente["dni"] == dni:
+            turnos.append(actual.turno)
+            actual = actual.siguiente
+
+        return turnos
+
+    def eliminar_por_dni(self, dni):
+        anterior = None
+        actual = self.cabeza
+
+        while actual is not None:
+            if str(actual.turno["dni"]) == str(dni):
                 if anterior is None:
-                    self.head = actual.siguiente
+                    self.cabeza = actual.siguiente
                 else:
                     anterior.siguiente = actual.siguiente
-                if actual is self.tail:
-                    self.tail = anterior
+
+                if actual is self.cola:
+                    self.cola = anterior
+
                 self.tamano -= 1
-                if self.head is None:
-                    self.tail = None
-                return actual.cliente
-            anterior, actual = actual, actual.siguiente
+
+                if self.cabeza is None:
+                    self.cola = None
+
+                return actual.turno
+
+            anterior = actual
+            actual = actual.siguiente
+
         return None
 
+    # Alias para compatibilidad con el código anterior.
+    def enqueue(self, turno):
+        self.encolar(turno)
+
+    def dequeue(self):
+        return self.desencolar()
+
+    def enqueue_front(self, turno):
+        self.encolar_frente(turno)
+
+    def remove_by_dni(self, dni):
+        return self.eliminar_por_dni(dni)
+
     def listar(self):
-        """Devuelve los clientes pendientes en orden FIFO. Complejidad: O(n)."""
-        clientes = []
-        actual = self.head
-        while actual is not None:
-            clientes.append(actual.cliente)
-            actual = actual.siguiente
-        return clientes
+        return self.obtener_turnos()
 
     def __len__(self):
         return self.tamano
